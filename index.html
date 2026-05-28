@@ -124,7 +124,7 @@
                 </a>
               </span>
               <span class="link-block">
-                <a href="static/images/QPRL_Poster_ICML_2025.pdf" class="button is-dark is-rounded" target="_blank">
+                <a href="" class="button is-dark is-rounded" target="_blank">
                   <span class="icon">
                     <i class="fas fa-file-pdf"></i>
                   </span>
@@ -134,7 +134,7 @@
 
         
               <span class="link-block">
-                <a href="static/images/QPRL_Presentation_Slides_ICML25.pdf" class="button is-dark is-rounded" target="_blank">
+                <a href="" class="button is-dark is-rounded" target="_blank">
                   <span class="icon">
                     <i class="fas fa-file-pdf"></i>
                   </span>
@@ -260,32 +260,32 @@
       <div class="column is-four-fifths">
         <h2 class="title is-3">Abstract</h2>
         <div class="content has-text-justified">
-         <p>
-    Reinforcement learning (RL) in real-world tasks such as robotic navigation often encounters environments with
-    <strong>asymmetric traversal costs</strong>, where actions like climbing uphill versus moving downhill incur distinctly different penalties,
-    or transitions may become irreversible.
-  </p>
+ <p>
+  Robotic locomotion in complex physical environments frequently faces <strong>directional asymmetries</strong>, 
+  where traversal effort varies dramatically based on heading—such as climbing uphill versus moving downhill, 
+  or navigating lateral slip and terrain hazards.
+</p>
 
-  <p>
-    While recent <em>quasimetric RL</em> methods relax symmetry assumptions, they typically do not explicitly account for
-    <strong>path-dependent costs</strong> or provide rigorous <strong>safety guarantees</strong>.
-  </p>
+<p>
+  Standard reinforcement learning approaches typically fail to explicitly capture these <strong>direction-dependent effects</strong> 
+  or insulate the system against rare, catastrophic <strong>tail-risk outcomes</strong>.
+</p>
 
-  <p>
-    We introduce <strong>Quasi-Potential Reinforcement Learning (QPRL)</strong>, a novel framework that explicitly decomposes asymmetric traversal costs into a
-    <em>path-independent potential function</em> \( \Phi \) and a <em>path-dependent residual</em> \( \Psi \).
-    This decomposition allows efficient learning and stable policy optimization via a <strong>Lyapunov-based safety mechanism</strong>.
-  </p>
+<p>
+  We introduce <strong>Finslerian Reinforcement Learning (FiRL)</strong>, an RL framework that incorporates a 
+  <em>Finsler metric</em> into the locomotion cost, expressing effort as an asymmetric function \( F(x,v) \) that depends explicitly on state \( x \) and motion \( v \). 
+  To robustly handle extreme failures, FiRL minimizes a <strong>Conditional Value-at-Risk (\( \text{CVaR}_\alpha \))</strong> objective using a novel actor-critic architecture.
+</p>
 
-  <p>
-    <strong>Theoretically</strong>, we prove that QPRL achieves convergence with improved sample complexity of \( \tilde{O}(\sqrt{T}) \),
-    surpassing prior quasimetric RL bounds of \( \tilde{O}(T) \).
-  </p>
+<p>
+  <strong>Theoretically</strong>, we derive the risk-sensitive Bellman equation and prove that the corresponding CVaR–Finsler Bellman operator is a 
+  <strong>\( \gamma \)-contraction</strong>, ensuring convergence to a unique fixed-point value function whose underlying geometry induces an asymmetric path cost \( d_F \) satisfying the triangle inequality.
+</p>
 
-  <p>
-    <strong>Empirically</strong>, our experiments demonstrate that QPRL attains state-of-the-art performance across various navigation and control tasks,
-    significantly reducing irreversible constraint violations by approximately <strong>4×</strong> compared to baselines.
-  </p>
+<p>
+  <strong>Empirically</strong>, across simulation benchmarks and real-world hardware trials, FiRL demonstrates vastly superior safety and energy efficiency over standard baselines. 
+  For example, on a \( 12^\circ \) sloped Hopper task, FiRL reduces worst-case (\( \text{CVaR}_{0.1} \)) impact forces by over <strong>35%</strong> and total energy consumption by <strong>15%</strong> while maximizing success rate.
+</p>
         
         </div>
       </div>
@@ -312,7 +312,7 @@
 
   <section class="section" id="QPRL_arch">
   <div class="container is-max-desktop">
-    <h2 class="title is-3">QPRL Framework</h2>
+    <h2 class="title is-3">FiRL Framework</h2>
     <div class="content">
       <p class="has-text-centered is-size-6">
       <strong>QPRL</strong> decomposes asymmetric costs into path-independent potential \( \Phi \) and path-dependent residual \( \Psi \).
@@ -620,13 +620,13 @@
   <div class="container is-max-desktop content">
     <h2 class="title">BibTeX</h2>
     <pre><code>
-      @InProceedings{hossain2025qprl,
-      title     = {{QPRL}: Learning Optimal Policies with Quasi-Potential Functions for Asymmetric Traversal},
+      @InProceedings{hossain2026qprl,
+      title     = {{FiRL}: Learning Anisotropic Value Geometry with Finsler Reinforcement Learning},
       author    = {Jumman Hossain and Nirmalya Roy},
-      booktitle = {Proceedings of the 42nd International Conference on Machine Learning},
+      booktitle = {Proceedings of the 43nd International Conference on Machine Learning},
       series    = {Proceedings of Machine Learning Research},
       publisher = {PMLR},
-      year      = {2025}
+      year      = {2026}
       }
 </code></pre>
   </div>
