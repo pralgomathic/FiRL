@@ -310,90 +310,141 @@
 
 </section>
 
-  <section class="section" id="QPRL_arch">
+  <section class="section" id="FiRL_arch">
   <div class="container is-max-desktop">
     <h2 class="title is-3">FiRL Framework</h2>
+
     <div class="content">
       <p class="has-text-centered is-size-6">
-      <strong>QPRL</strong> decomposes asymmetric costs into path-independent potential \( \Phi \) and path-dependent residual \( \Psi \).
-      Integrates Lyapunov safety constraints <span style="color:goldenrod;">(yellow)</span> for stable exploration.
+        <strong>FiRL</strong> learns locomotion policies with a direction-dependent
+        Finsler cost \(F(x,v)\) and a dynamic CVaR objective.
+        The framework captures uphill/downhill asymmetry, lateral slip, and rare high-cost failures
+        within a single risk-sensitive reinforcement learning objective.
       </p>
-
     </div>
+
     <div class="columns is-centered">
-      <div class="column is-half">
+      <div class="column is-three-quarters">
         <figure class="image">
-          <img src="static/images/QPRL_Framework.jpeg" alt="QPRL framework diagram">
+          <img src="static/images/FiRL_Framework.jpeg" alt="FiRL framework diagram">
         </figure>
       </div>
     </div>
- <div class="content">
-  <p class="has-text-centered is-size-6">
-    In QPRL, we maintain a learned encoder \(f_\phi\) and transition model \(T_\psi\) (to embed states in a latent space), plus the two quasi-potential functions \(\Phi_\theta\) and \(\Psi_\theta\). Training proceeds as follows:
-  </p>
 
-  <p><strong>State and transition model:</strong></p>
-  <p>
-    We encode each state \(s_i\) as \(z_i = f_\phi(s_i)\) and predict the next latent \(z'_i = T_\psi(z_i, a_i)\). We train \((f_\phi, T_\psi)\) by minimizing reconstruction loss:
-  </p>
-  <p>
-    \[\|\hat z'_i - f_\phi(s'_i)\|^2\]
-  </p>
-  <p>This yields a compact latent representation for planning.</p>
+    <div class="content">
+      <p class="has-text-centered is-size-6">
+        FiRL builds a local cost geometry for locomotion and then trains an actor--critic policy
+        to minimize tail-risk under that geometry. The key idea is that moving in different
+        directions can have different physical costs: climbing uphill is not the same as descending,
+        and lateral slip is not the same as forward motion.
+      </p>
 
-  <p><strong>Quasi-Potential learning:</strong></p>
-  <p>
-    We fit \(\Phi_\theta, \Psi_\theta\) so that \(\Phi(g) - \Phi(s) + \Psi(s \to g) \approx c(s \to g)\). Concretely, for observed transitions \((s_i, a_i, s'_i, c_i)\) towards goal \(g_i\), we minimize the squared “inverse Bellman” loss:
-  </p>
-  <p>
-    \[
-    L_U = \frac{1}{B} \sum_i \left( \Phi_\theta(g_i) - \Phi_\theta(s_i) + \Psi_\theta(s_i \to g_i) - c_i \right)^2
-    \]
-  </p>
-  <p>
-    to enforce the decomposition. We also add a <em>constraint loss</em> to enforce the quasimetric property:  
-    \(\Psi(s \to s') \ge c(s \to s') - (\Phi(s') - \Phi(s))\).  
-    In practice this is implemented via a ReLU-based term in the loss. These updates ensure \(\Phi, \Psi\) capture both reversible and irreversible cost components.
-  </p>
+      <p><strong>Direction-dependent Finsler cost:</strong></p>
+      <p>
+        FiRL defines the one-step locomotion cost using a Finsler metric \(F(x,v)\), where
+        \(x\) is the robot state and \(v\) is the induced motion direction:
+      </p>
 
-  <p><strong>Lyapunov Safety Constraint:</strong></p>
-  <p>
-    QPRL enforces a Lyapunov-based safety constraint on \(\Phi\). Specifically, for any state \(s\) and safe action \(a\), the expected potential at the next state should not exceed the current potential by more than \(\epsilon\):
-  </p>
-  <p>
-    \[
-    \mathbb{E}_{s' \sim P(\cdot|s,a)}[\Phi_\theta(s')] \leq \Phi_\theta(s) + \epsilon
-    \]
-  </p>
-  <p>
-    This is a Lyapunov condition indicating that \(\Phi\) is a Lyapunov function bounding unsafe exploration.  
-    We implement this via a Lagrangian penalty: if the predicted next latent state \(z'\) violates \(\Phi(z') > \Phi(s) + \epsilon\), we add a ReLU penalty:
-  </p>
-  <p>
-    \[
-    \max(0, \Phi(z') - \Phi(s) - \epsilon)
-    \]
-  </p>
-  <p>
-    to the policy loss. A dynamic multiplier \(\lambda\) is adjusted to enforce this constraint adaptively during training.
-  </p>
+      <p>
+        \[
+        F(x,v)
+        =
+        w_e F_{\mathrm{energy}}(x,v)
+        +
+        w_d F_{\mathrm{drift}}(x,v)
+        +
+        w_f F_{\mathrm{friction}}(x,v).
+        \]
+      </p>
 
-  <p><strong>Policy Update:</strong></p>
-  <p>
-    Finally, the policy \(\pi_\omega\) is updated to maximize long-term success under the quasi-potential costs, subject to the safety layer.  
-    We form a (cost-to-go) estimate \(\hat d_i = \Phi(g_i) - \Phi(s_i) + \Psi(s_i \to g_i)\) and minimize:
-  </p>
-  <p>
-    \[
-    \sum_i \left[ \hat d_i + \lambda\,\mathrm{ReLU}(\Phi(z'_i) - \Phi(s_i) - \epsilon) \right]
-    \]
-  </p>
-  <p>
-    with respect to \(\omega\). This encourages low-cost paths while penalizing actions that would likely increase the Lyapunov potential beyond \(\epsilon\).
-  </p>
-</div>
+      <p>
+        The energy term measures basic motion effort, the drift term penalizes uphill motion,
+        and the friction term penalizes lateral movement or slip. This lets the robot distinguish
+        between actions that may look similar in Euclidean space but have very different physical
+        consequences.
+      </p>
 
+      <p><strong>Quasi-metric path geometry:</strong></p>
+      <p>
+        Because \(F(x,v)\) can assign different costs to \(v\) and \(-v\), the induced path cost
+        is generally asymmetric. For two states \(x\) and \(y\), FiRL defines:
+      </p>
 
+      <p>
+        \[
+        d_F(x,y)
+        =
+        \inf_{\tau:x\to y}
+        \int_0^1 F(\tau(t),\dot{\tau}(t))\,dt.
+        \]
+      </p>
+
+      <p>
+        This path cost satisfies the triangle inequality through path concatenation, while still
+        allowing \(d_F(x,y) \neq d_F(y,x)\). In this sense, FiRL gives the policy an asymmetric
+        geometric bias for direction-aware locomotion.
+      </p>
+
+      <p><strong>Dynamic CVaR Bellman objective:</strong></p>
+      <p>
+        To reduce rare but costly failures, FiRL optimizes a dynamic CVaR objective rather than
+        only expected cost. The Bellman update is:
+      </p>
+
+      <p>
+        \[
+        \begin{aligned}
+        V_\alpha(x)
+        &=
+        \min_{u\in\mathcal{U}(x)}
+        \Bigl\{
+        c(x,u)
+        +
+        \gamma\,\mathrm{CVaR}_{\alpha}
+        \left[V_\alpha(X')\right]
+        \Bigr\}, \\
+        &\qquad X'\sim P(\cdot\mid x,u),
+        \end{aligned}
+        \]
+      </p>
+
+      <p>
+        where \(c(x,u)=F(x,v(x,u))\). This objective encourages the robot to avoid actions that
+        may lead to high-cost tail outcomes, such as slipping, falling, or using excessive energy.
+      </p>
+
+      <p><strong>Distributional critic and actor update:</strong></p>
+      <p>
+        FiRL uses a distributional critic \(Z_\phi(x)\) to estimate the future cost distribution.
+        The critic outputs quantiles of the return distribution, and the CVaR target is computed
+        from the worst-cost tail:
+      </p>
+
+      <p>
+        \[
+        y_i
+        =
+        c_i
+        +
+        \gamma(1-d_i)
+        \widehat{\mathrm{CVaR}}_\alpha
+        \left[Z_{\phi^-}(x'_i)\right].
+        \]
+      </p>
+
+      <p>
+        The actor is then updated using advantages derived from this CVaR-based backup. This keeps
+        the optimization practical while preserving FiRL’s main structure: direction-dependent cost
+        plus tail-risk-aware learning.
+      </p>
+
+      <p><strong>Policy behavior:</strong></p>
+      <p>
+        In slopes, wind, stairs, and narrow-support settings, FiRL learns to avoid direct but risky
+        motions when safer alternatives exist. Instead of only maximizing average performance, it
+        learns cautious, energy-aware behaviors that reduce high-cost failures.
+      </p>
+    </div>
   </div>
 </section>
 
